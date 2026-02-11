@@ -1,327 +1,425 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>Nousad AI</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOUSAD AI | HOLOGRAPHIC INTERFACE</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=Space+Mono&display=swap"
-      rel="stylesheet"
-    />
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai"
-        }
-      }
-    </script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+
     <style>
-      :root {
-        --primary: #00f3ff;
-        --secondary: #0066ff;
-        --bg: #050505;
-        --glass: rgba(0, 243, 255, 0.05);
-      }
-      body {
-        background-color: var(--bg);
-        color: var(--primary);
-        font-family: "Rajdhani", sans-serif;
-        height: 100vh;
-        overflow: hidden;
-        background-image:
-          linear-gradient(rgba(0, 20, 40, 0.9) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0, 20, 40, 0.9) 1px, transparent 1px);
-        background-size: 40px 40px;
-        cursor: crosshair;
-      }
-      .font-mono {
-        font-family: "Space Mono", monospace;
-      }
-      .hud-border {
-        border: 1px solid var(--glass);
-        box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
-        background: rgba(0, 10, 20, 0.6);
-        backdrop-filter: blur(5px);
-      }
-      .core-container {
-        position: relative;
-        width: 240px;
-        height: 240px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      .ring {
-        position: absolute;
-        border-radius: 50%;
-        border: 2px solid transparent;
-        box-shadow: 0 0 20px var(--primary);
-      }
-      .r1 {
-        width: 100%;
-        height: 100%;
-        border-top-color: var(--primary);
-        border-bottom-color: var(--primary);
-        animation: spin 10s linear infinite;
-      }
-      .r2 {
-        width: 80%;
-        height: 80%;
-        border-left-color: var(--secondary);
-        border-right-color: var(--secondary);
-        animation: spin-rev 6s linear infinite;
-      }
-      .r3 {
-        width: 60%;
-        height: 60%;
-        border: 1px dashed rgba(255, 255, 255, 0.3);
-        animation: pulse 2s ease-in-out infinite;
-      }
-      .core {
-        width: 60px;
-        height: 60px;
-        background: radial-gradient(circle, #fff, var(--primary));
-        border-radius: 50%;
-        box-shadow:
-          0 0 50px var(--primary),
-          0 0 100px var(--secondary);
-        z-index: 10;
-        transition: all 0.3s;
-      }
-      .status-listening .core {
-        transform: scale(0.9);
-        box-shadow: 0 0 30px var(--primary);
-      }
-      .status-speaking .core {
-        animation: flicker 0.1s infinite alternate;
-        transform: scale(1.2);
-      }
-      .viz-bar {
-        width: 4px;
-        background: var(--primary);
-        margin: 0 2px;
-        height: 5px;
-        transition: height 0.05s;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
+        :root {
+            --primary: #00f3ff;
+            --secondary: #0066ff;
+            --bg: #050510;
         }
-      }
-      @keyframes spin-rev {
-        to {
-          transform: rotate(-360deg);
+        body {
+            background-color: var(--bg);
+            color: var(--primary);
+            font-family: 'Share Tech Mono', monospace;
+            overflow: hidden;
+            margin: 0;
         }
-      }
-      @keyframes flicker {
-        0% {
-          opacity: 0.8;
+        .font-header { font-family: 'Orbitron', sans-serif; }
+        
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            position: absolute;
+            pointer-events: none;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10;
         }
-        100% {
-          opacity: 1;
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #001122; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); }
+
+        .glass-panel {
+            background: rgba(0, 20, 40, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
         }
-      }
-      @keyframes scan {
-        0% {
-          top: -10%;
+
+        .mic-active {
+            box-shadow: 0 0 20px #00f3ff, inset 0 0 10px #00f3ff;
+            border-color: #fff;
         }
-        100% {
-          top: 110%;
+
+        .cursor::after {
+            content: '▋';
+            animation: blink 1s step-start infinite;
         }
-      }
-      .scan-line {
-        position: fixed;
-        left: 0;
-        width: 100%;
-        height: 5px;
-        background: rgba(0, 243, 255, 0.1);
-        animation: scan 4s linear infinite;
-        pointer-events: none;
-        z-index: 50;
-      }
-      #captions {
-        text-shadow: 0 0 10px var(--primary);
-      }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
-  </head>
-  <body class="flex flex-col justify-between p-6">
-    <div class="scan-line"></div>
-    <header class="flex justify-between items-center z-10">
-      <div>
-        <h1 class="text-4xl font-bold tracking-widest uppercase">
-          NOUSAD<span class="text-white">AI</span>
-        </h1>
-        <div class="text-xs text-blue-400 tracking-[0.5em] mt-1">
-          SYSTEM ONLINE
-        </div>
-      </div>
-      <div class="hud-border px-4 py-2 rounded flex items-center gap-3">
-        <div
-          id="status-light"
-          class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_red]"
-        ></div>
-        <span id="status-text" class="font-mono text-xs uppercase"
-          >INITIALIZING</span
-        >
-      </div>
-    </header>
-    <main
-      class="flex-1 flex flex-col items-center justify-center relative z-10"
-    >
-      <div id="core-wrapper" class="core-container mb-12">
-        <div class="ring r1"></div>
-        <div class="ring r2"></div>
-        <div class="ring r3"></div>
-        <div class="core"></div>
-      </div>
-      <div class="w-full max-w-3xl text-center">
-        <p
-          id="captions"
-          class="text-2xl md:text-3xl font-light min-h-[60px] uppercase tracking-wide opacity-90"
-        >
-          CLICK ANYWHERE TO ENGAGE SYSTEM
-        </p>
-      </div>
-    </main>
-    <footer class="flex justify-between items-end z-10 w-full">
-      <div id="visualizer" class="flex items-end h-16"></div>
-      <div
-        class="hud-border px-4 py-2 text-[10px] uppercase text-gray-400 tracking-wider"
-      >
-        Developed by Mohamed Nousad
-      </div>
-    </footer>
-    <script type="module">
-      import { GoogleGenerativeAI } from "@google/generative-ai";
-      const API_KEY = "AIzaSyCA55VTeGj99g3Gc59c0v-Fd3KASTrVqq0";
-      const sysPrompt =
-        "You are Nousad AI, a futuristic intelligent assistant. Keep responses concise, witty, and precise. No formatting.";
-      let state = {
-        genAI: new GoogleGenerativeAI(API_KEY),
-        model: null,
-        chat: null,
-        rec: null,
-        speaking: false,
-        voices: [],
-      };
-      const ui = {
-        core: document.querySelector(".core"),
-        captions: document.getElementById("captions"),
-        status: document.getElementById("status-text"),
-        light: document.getElementById("status-light"),
-        viz: document.getElementById("visualizer"),
-      };
-      async function init() {
-        state.model = state.genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
-        state.chat = state.model.startChat({
-          history: [
-            { role: "user", parts: [{ text: sysPrompt }] },
-            { role: "model", parts: [{ text: "Online." }] },
-          ],
-        });
-        setupVoice();
-        setupRec();
-        createViz();
-      }
-      function setupVoice() {
-        window.speechSynthesis.onvoiceschanged = () => {
-          state.voices = window.speechSynthesis.getVoices();
+</head>
+<body class="h-screen w-screen flex flex-col relative">
+
+    <div class="absolute inset-0 z-0 opacity-20" 
+         style="background-image: radial-gradient(#00f3ff 1px, transparent 1px); background-size: 40px 40px;">
+    </div>
+    
+    <div id="canvas-container" class="absolute inset-0 z-0"></div>
+    <div class="scanlines"></div>
+
+    <div class="relative z-20 flex flex-col h-full p-4 pointer-events-none">
+        
+        <header class="flex justify-between items-start pointer-events-auto">
+            <div>
+                <h1 class="font-header text-4xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-500 drop-shadow-[0_0_10px_rgba(0,243,255,0.8)]">
+                    NOUSAD AI
+                </h1>
+                <p class="text-xs text-blue-300 tracking-[0.3em] mt-1">Developed by Nousad</p>
+            </div>
+            <div class="text-right text-xs text-cyan-700">
+                <div id="status-indicator" class="flex items-center gap-2 justify-end mb-1 text-red-500">
+                    <span class="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+                    OFFLINE
+                </div>
+                <div>CPU: <span id="cpu-stat">24</span>% | RAM: <span id="mem-stat">8</span>GB</div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col justify-end items-center pb-20 w-full max-w-4xl mx-auto">
+            
+            <div id="chat-container" class="glass-panel w-full h-64 overflow-y-auto p-4 mb-6 rounded-lg pointer-events-auto transition-opacity duration-500 opacity-0">
+                <div id="chat-log" class="flex flex-col gap-3 text-sm"></div>
+            </div>
+
+            <div class="text-center">
+                <p id="live-text" class="text-xl md:text-2xl font-light text-white drop-shadow-md min-h-[2rem] font-header tracking-wide"></p>
+                <div id="listening-bar" class="w-0 h-1 bg-cyan-400 mt-2 transition-all duration-100 mx-auto shadow-[0_0_10px_#00f3ff]"></div>
+            </div>
+        </main>
+
+        <footer class="pointer-events-auto flex justify-center pb-4">
+            <button id="init-btn" class="px-8 py-3 bg-cyan-900/50 hover:bg-cyan-500/20 border border-cyan-500 text-cyan-300 font-header font-bold tracking-wider rounded transition-all shadow-[0_0_15px_rgba(0,243,255,0.2)] hover:shadow-[0_0_25px_rgba(0,243,255,0.6)]">
+                START THE ENGINE
+            </button>
+            
+            <button id="mic-btn" class="hidden w-16 h-16 rounded-full border border-cyan-500 flex items-center justify-center bg-black/50 hover:bg-cyan-500/20 transition-all">
+                <svg class="w-6 h-6 fill-current text-cyan-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        const CONFIG = {
+            botName: "NOUSAD",
+            color: 0x00f3ff,
+            bloomStrength: 2.0,
+            voiceRate: 1.1, 
+            voicePitch: 0.9 
         };
-      }
-      function getBestVoice() {
-        return (
-          state.voices.find((v) => v.name.includes("Google US English")) ||
-          state.voices.find((v) => v.name.includes("Zira")) ||
-          state.voices.find((v) => v.lang === "en-US") ||
-          state.voices[0]
-        );
-      }
-      function setupRec() {
-        if (!("webkitSpeechRecognition" in window))
-          return (ui.captions.innerText = "VOICE MODULE MISSING");
-        const Rec = window.webkitSpeechRecognition;
-        state.rec = new Rec();
-        state.rec.continuous = false;
-        state.rec.interimResults = false;
-        state.rec.lang = "en-US";
-        state.rec.onstart = () => {
-          if (state.speaking) return;
-          setStatus("LISTENING", "#00f3ff");
-          ui.core.parentElement.classList.add("status-listening");
+
+        const State = {
+            listening: false,
+            speaking: false,
+            audioContext: null
         };
-        state.rec.onend = () => {
-          ui.core.parentElement.classList.remove("status-listening");
-          if (!state.speaking) state.rec.start();
+
+        const UI = {
+            chatLog: document.getElementById('chat-log'),
+            chatContainer: document.getElementById('chat-container'),
+            liveText: document.getElementById('live-text'),
+            status: document.getElementById('status-indicator'),
+            initBtn: document.getElementById('init-btn'),
+            micBtn: document.getElementById('mic-btn'),
+            listeningBar: document.getElementById('listening-bar')
         };
-        state.rec.onresult = async (e) => {
-          const transcript = e.results[0][0].transcript;
-          ui.captions.innerText = transcript;
-          setStatus("PROCESSING", "#a855f7");
-          state.rec.stop();
-          try {
-            const result = await state.chat.sendMessage(transcript);
-            speak(result.response.text());
-          } catch (err) {
-            setStatus("ERROR", "#ef4444");
-            setTimeout(() => {
-              state.rec.start();
-            }, 2000);
-          }
-        };
-      }
-      function speak(text) {
-        state.speaking = true;
-        state.rec.stop();
-        setStatus("SPEAKING", "#fff");
-        ui.core.parentElement.classList.add("status-speaking");
-        const u = new SpeechSynthesisUtterance(text);
-        u.voice = getBestVoice();
-        u.pitch = 1.1;
-        u.rate = 1.1;
-        u.onend = () => {
-          state.speaking = false;
-          ui.core.parentElement.classList.remove("status-speaking");
-          setStatus("STANDBY", "#00f3ff");
-          state.rec.start();
-        };
-        window.speechSynthesis.speak(u);
-        animateViz();
-      }
-      function setStatus(txt, col) {
-        ui.status.innerText = txt;
-        ui.light.style.backgroundColor = col;
-        ui.light.style.boxShadow = `0 0 15px ${col}`;
-      }
-      function createViz() {
-        for (let i = 0; i < 30; i++) {
-          const b = document.createElement("div");
-          b.className = "viz-bar";
-          ui.viz.appendChild(b);
+
+        class HologramEngine {
+            constructor() {
+                this.container = document.getElementById('canvas-container');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                
+                this.setupRenderer();
+                this.createObjects();
+                this.setupPostProcessing();
+                this.animate();
+
+                window.addEventListener('resize', () => this.onResize());
+            }
+
+            setupRenderer() {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.container.appendChild(this.renderer.domElement);
+                this.camera.position.z = 5;
+            }
+
+            createObjects() {
+                const coreGeo = new THREE.IcosahedronGeometry(1.2, 1);
+                const coreMat = new THREE.MeshBasicMaterial({ 
+                    color: CONFIG.color, wireframe: true, transparent: true, opacity: 0.5
+                });
+                this.core = new THREE.Mesh(coreGeo, coreMat);
+                this.scene.add(this.core);
+
+                const lightGeo = new THREE.SphereGeometry(0.5, 32, 32);
+                const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                this.light = new THREE.Mesh(lightGeo, lightMat);
+                this.scene.add(this.light);
+
+                const ringGeo = new THREE.TorusGeometry(2.5, 0.05, 16, 100);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x0066ff, transparent: true, opacity: 0.6 });
+                this.ring1 = new THREE.Mesh(ringGeo, ringMat);
+                this.ring2 = new THREE.Mesh(ringGeo, ringMat);
+                this.ring1.rotation.x = Math.PI / 2;
+                this.ring2.rotation.x = Math.PI / 1.5;
+                this.scene.add(this.ring1);
+                this.scene.add(this.ring2);
+
+                const particlesGeo = new THREE.BufferGeometry();
+                const count = 1000;
+                const positions = new Float32Array(count * 3);
+                for(let i=0; i<count*3; i++) { positions[i] = (Math.random() - 0.5) * 15; }
+                particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const particlesMat = new THREE.PointsMaterial({ size: 0.05, color: CONFIG.color, transparent: true, opacity: 0.4 });
+                this.particles = new THREE.Points(particlesGeo, particlesMat);
+                this.scene.add(this.particles);
+            }
+
+            setupPostProcessing() {
+                this.composer = new THREE.EffectComposer(this.renderer);
+                this.composer.addPass(new THREE.RenderPass(this.scene, this.camera));
+                const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+                bloomPass.strength = CONFIG.bloomStrength;
+                bloomPass.radius = 0.5;
+                this.composer.addPass(bloomPass);
+            }
+
+            onResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.composer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const time = Date.now() * 0.001;
+                this.core.rotation.y += 0.005;
+                this.core.rotation.x += 0.002;
+                this.ring1.rotation.z += 0.005;
+                this.ring2.rotation.y += 0.005;
+                this.particles.rotation.y = -time * 0.05;
+
+                let scale = 1;
+                if (State.speaking) {
+                    scale = 1 + (Math.random() * 0.4); 
+                    this.core.material.color.setHex(0xff0055); 
+                    this.light.scale.setScalar(scale * 0.8);
+                } else if (State.listening) {
+                    scale = 1 + Math.sin(time * 2) * 0.1;
+                    this.core.material.color.setHex(CONFIG.color);
+                } else {
+                    scale = 1;
+                    this.core.material.color.setHex(0x555555);
+                }
+                this.core.scale.setScalar(scale);
+                this.composer.render();
+            }
         }
-      }
-      function animateViz() {
-        if (!state.speaking) return resetViz();
-        const bars = document.querySelectorAll(".viz-bar");
-        bars.forEach((b) => {
-          b.style.height = Math.random() * 60 + 5 + "px";
+
+        const Voice = {
+            recognition: null,
+            synth: window.speechSynthesis,
+            voices: [],
+
+            init() {
+                console.log("VOICE: Initializing...");
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    console.error("VOICE: No SpeechRecognition support");
+                    alert("No Voice Support. Use Chrome.");
+                    return;
+                }
+
+                this.recognition = new SpeechRecognition();
+                this.recognition.lang = 'en-US';
+                this.recognition.continuous = false; 
+                this.recognition.interimResults = true;
+
+                this.recognition.onstart = () => {
+                    console.log("VOICE: Recognition STARTED");
+                    State.listening = true;
+                    UI.status.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_10px_#00f3ff]"></span>SERVER LISTENING`;
+                    UI.status.classList.remove('text-red-500', 'text-yellow-500', 'text-pink-500');
+                    UI.status.classList.add('text-cyan-400');
+                    UI.micBtn.classList.add('mic-active');
+                    UI.liveText.innerText = "";
+                };
+
+                this.recognition.onend = () => {
+                    console.log("VOICE: Recognition ENDED");
+                    State.listening = false;
+                    UI.micBtn.classList.remove('mic-active');
+                    
+                    if (!State.speaking && UI.initBtn.style.display === 'none') {
+                        console.log("VOICE: Auto-restarting recognition");
+                        try { this.recognition.start(); } catch(e) { console.warn("Restart failed", e); }
+                    }
+                };
+
+                this.recognition.onresult = (event) => {
+                    const transcript = Array.from(event.results)
+                        .map(result => result[0])
+                        .map(result => result.transcript)
+                        .join('');
+                    
+                    UI.liveText.innerText = transcript;
+                    UI.listeningBar.style.width = Math.min(100, transcript.length * 5) + '%';
+
+                    if (event.results[0].isFinal) {
+                        console.log("VOICE: Final Result:", transcript);
+                        this.handleUserInput(transcript);
+                    }
+                };
+
+                this.loadVoices();
+                if (speechSynthesis.onvoiceschanged !== undefined) {
+                    speechSynthesis.onvoiceschanged = this.loadVoices.bind(this);
+                }
+            },
+
+            loadVoices() {
+                this.voices = this.synth.getVoices();
+                console.log("VOICE: Voices Loaded", this.voices.length);
+            },
+
+            startListening() {
+                console.log("VOICE: Requesting Start");
+                try { this.recognition.start(); } catch (e) { console.log("VOICE: Already started or error", e); }
+            },
+
+            stopListening() {
+                console.log("VOICE: Stopping");
+                try { this.recognition.stop(); } catch (e) {}
+            },
+
+            async handleUserInput(text) {
+                this.stopListening();
+                console.log("PROCESS: User Input ->", text);
+                
+                UI.addMessage("USER", text);
+                UI.listeningBar.style.width = '0%';
+                
+                UI.status.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> PROCESSING`;
+                UI.status.className = "flex items-center gap-2 justify-end mb-1 text-yellow-500";
+                UI.liveText.innerText = "NOUSAD IS THINKING...";
+
+                const systemPrompt = "You are NOUSAD, a holographic AI interface. Be concise, technical, and robotic. No markdown.";
+                const prompt = `${systemPrompt} User: ${text}`;
+                const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}?seed=${Math.random()}`;
+
+                console.log("API: Sending Request to", url);
+
+                try {
+                    const response = await fetch(url);
+                    const reply = await response.text();
+                    
+                    console.log("API: Response received ->", reply);
+                    
+                    if(reply) {
+                        this.speak(reply);
+                    } else {
+                        throw new Error("Empty response");
+                    }
+
+                } catch (error) {
+                    console.error("API: Error", error);
+                    this.speak("Data link corrupted. Unable to process.");
+                }
+            },
+
+            speak(text) {
+                console.log("TTS: Speaking ->", text);
+                if (this.synth.speaking) {
+                    this.synth.cancel();
+                }
+
+                State.speaking = true;
+                
+                UI.addMessage("AI", text);
+                UI.liveText.innerText = text;
+                UI.status.innerHTML = `<span class="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span> SPEAKING`;
+                UI.status.className = "flex items-center gap-2 justify-end mb-1 text-pink-500";
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                const roboticVoice = this.voices.find(v => v.name.includes('Google US English')) || 
+                                     this.voices.find(v => v.name.includes('Samantha')) || 
+                                     this.voices[0];
+                
+                utterance.voice = roboticVoice;
+                utterance.rate = CONFIG.voiceRate;
+                utterance.pitch = CONFIG.voicePitch;
+
+                utterance.onend = () => {
+                    console.log("TTS: Finished");
+                    State.speaking = false;
+                    UI.liveText.innerText = "";
+                    this.startListening();
+                };
+
+                this.synth.speak(utterance);
+            }
+        };
+
+        UI.addMessage = (sender, text) => {
+            UI.chatContainer.style.opacity = '1';
+            const div = document.createElement('div');
+            const isAI = sender === "AI";
+            div.className = `p-3 rounded border-l-2 animate-fade-in ${isAI ? 'bg-blue-900/30 border-cyan-400 ml-0 mr-8' : 'bg-gray-800/50 border-gray-400 ml-8 mr-0'}`;
+            div.innerHTML = `<div class="text-xs font-bold opacity-70 mb-1 ${isAI ? 'text-cyan-400' : 'text-gray-300'}">${sender}</div><div class="text-gray-100 leading-relaxed cursor">${text}</div>`;
+            UI.chatLog.appendChild(div);
+            UI.chatContainer.scrollTop = UI.chatContainer.scrollHeight;
+        };
+
+        const initSystem = () => {
+            console.log("SYSTEM: Initializing...");
+            const hologram = new HologramEngine();
+            Voice.init();
+            UI.initBtn.style.display = 'none';
+            UI.micBtn.classList.remove('hidden');
+            Voice.startListening();
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            State.audioContext = new AudioContext();
+            State.audioContext.resume();
+        };
+
+        UI.initBtn.addEventListener('click', initSystem);
+        
+        UI.micBtn.addEventListener('click', () => {
+            console.log("USER: Manual Mic Click");
+            if(State.speaking) {
+                window.speechSynthesis.cancel();
+                State.speaking = false;
+            }
+            Voice.startListening();
         });
-        requestAnimationFrame(animateViz);
-      }
-      function resetViz() {
-        document
-          .querySelectorAll(".viz-bar")
-          .forEach((b) => (b.style.height = "5px"));
-      }
-      document.body.onclick = () => {
-        document.body.onclick = null;
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        ctx.resume();
-        state.rec.start();
-        ui.captions.innerText = "SYSTEM ENGAGED. AWAITING INPUT.";
-        setStatus("STANDBY", "#00f3ff");
-      };
-      window.onload = init;
+
     </script>
-  </body>
+</body>
 </html>
