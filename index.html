@@ -1,365 +1,327 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nousad AI | Voice Assistant</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Nousad AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400&display=swap" rel="stylesheet">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=Space+Mono&display=swap"
+      rel="stylesheet"
+    />
     <script type="importmap">
-      { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
     </script>
-
     <style>
-        :root {
-            --bg-dark: #09090b;
-            --neural-primary: #8b5cf6; /* Violet */
-            --neural-secondary: #06b6d4; /* Cyan */
-            --glass-border: rgba(255, 255, 255, 0.05);
-            --glass-bg: rgba(10, 10, 10, 0.4);
+      :root {
+        --primary: #00f3ff;
+        --secondary: #0066ff;
+        --bg: #050505;
+        --glass: rgba(0, 243, 255, 0.05);
+      }
+      body {
+        background-color: var(--bg);
+        color: var(--primary);
+        font-family: "Rajdhani", sans-serif;
+        height: 100vh;
+        overflow: hidden;
+        background-image:
+          linear-gradient(rgba(0, 20, 40, 0.9) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 20, 40, 0.9) 1px, transparent 1px);
+        background-size: 40px 40px;
+        cursor: crosshair;
+      }
+      .font-mono {
+        font-family: "Space Mono", monospace;
+      }
+      .hud-border {
+        border: 1px solid var(--glass);
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        background: rgba(0, 10, 20, 0.6);
+        backdrop-filter: blur(5px);
+      }
+      .core-container {
+        position: relative;
+        width: 240px;
+        height: 240px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .ring {
+        position: absolute;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        box-shadow: 0 0 20px var(--primary);
+      }
+      .r1 {
+        width: 100%;
+        height: 100%;
+        border-top-color: var(--primary);
+        border-bottom-color: var(--primary);
+        animation: spin 10s linear infinite;
+      }
+      .r2 {
+        width: 80%;
+        height: 80%;
+        border-left-color: var(--secondary);
+        border-right-color: var(--secondary);
+        animation: spin-rev 6s linear infinite;
+      }
+      .r3 {
+        width: 60%;
+        height: 60%;
+        border: 1px dashed rgba(255, 255, 255, 0.3);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .core {
+        width: 60px;
+        height: 60px;
+        background: radial-gradient(circle, #fff, var(--primary));
+        border-radius: 50%;
+        box-shadow:
+          0 0 50px var(--primary),
+          0 0 100px var(--secondary);
+        z-index: 10;
+        transition: all 0.3s;
+      }
+      .status-listening .core {
+        transform: scale(0.9);
+        box-shadow: 0 0 30px var(--primary);
+      }
+      .status-speaking .core {
+        animation: flicker 0.1s infinite alternate;
+        transform: scale(1.2);
+      }
+      .viz-bar {
+        width: 4px;
+        background: var(--primary);
+        margin: 0 2px;
+        height: 5px;
+        transition: height 0.05s;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: #fff;
-            overflow: hidden;
-            background-image: radial-gradient(circle at 50% 120%, #2e1065 0%, var(--bg-dark) 50%);
-            height: 100vh;
-            width: 100vw;
-            cursor: crosshair;
+      }
+      @keyframes spin-rev {
+        to {
+          transform: rotate(-360deg);
         }
-
-        .font-display { font-family: 'Space Grotesk', sans-serif; }
-
-        /* --- Neural Core --- */
-        .core-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+      }
+      @keyframes flicker {
+        0% {
+          opacity: 0.8;
         }
-
-        .neural-ring {
-            position: absolute;
-            border-radius: 50%;
-            border: 1px solid transparent;
-            transition: all 0.5s ease;
+        100% {
+          opacity: 1;
         }
-
-        .ring-1 { width: 100%; height: 100%; border-top-color: var(--neural-primary); animation: spin 8s linear infinite; opacity: 0.8; }
-        .ring-2 { width: 80%; height: 80%; border-left-color: var(--neural-secondary); animation: spin-rev 12s linear infinite; opacity: 0.6; }
-        .ring-3 { width: 60%; height: 60%; border-bottom-color: #fff; animation: spin 5s linear infinite; opacity: 0.4; }
-
-        .core-glow {
-            width: 40px;
-            height: 40px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 40px var(--neural-primary), 0 0 80px var(--neural-secondary);
-            animation: pulse-idle 4s ease-in-out infinite;
-            z-index: 10;
+      }
+      @keyframes scan {
+        0% {
+          top: -10%;
         }
-
-        /* States */
-        .status-listening .core-glow { animation: pulse-listen 1.5s ease-in-out infinite; background: var(--neural-secondary); box-shadow: 0 0 50px var(--neural-secondary); }
-        .status-speaking .core-glow { animation: pulse-speak 0.2s ease-in-out infinite alternate; background: var(--neural-primary); box-shadow: 0 0 80px var(--neural-primary), 0 0 120px var(--neural-primary); }
-        .status-processing .neural-ring { animation-duration: 0.5s; border-color: #fff; }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes spin-rev { to { transform: rotate(-360deg); } }
-        @keyframes pulse-idle { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 0.8; } }
-        @keyframes pulse-listen { 0% { transform: scale(0.9); opacity: 0.8; } 50% { transform: scale(1.3); opacity: 0.4; } 100% { transform: scale(0.9); opacity: 0.8; } }
-        @keyframes pulse-speak { from { transform: scale(1); } to { transform: scale(1.5); } }
-
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
+        100% {
+          top: 110%;
         }
-
-        /* Audio Bars */
-        .audio-viz { display: flex; gap: 4px; height: 30px; align-items: center; }
-        .bar { width: 3px; background: #fff; height: 4px; border-radius: 2px; transition: height 0.05s; opacity: 0.5; }
-
-        /* Toast */
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 1s; font-size: 10px; color: #555; pointer-events: none; }
+      }
+      .scan-line {
+        position: fixed;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: rgba(0, 243, 255, 0.1);
+        animation: scan 4s linear infinite;
+        pointer-events: none;
+        z-index: 50;
+      }
+      #captions {
+        text-shadow: 0 0 10px var(--primary);
+      }
     </style>
-</head>
-<body onclick="unlockAudio()">
-
-    <div id="interface" class="fixed inset-0 flex flex-col justify-between p-8 z-10">
-        
-        <header class="flex justify-between items-start opacity-0 animate-[fadeIn_1s_ease-out_forwards]">
-            <div>
-                <h1 class="font-display text-2xl font-bold tracking-tight">NOUSAD<span class="text-indigo-400">AI</span></h1>
-                <div class="text-[10px] uppercase tracking-[0.4em] text-gray-500 mt-1">Experimental Build</div>
-            </div>
-            <div class="glass-panel px-3 py-1 rounded-full flex items-center gap-2">
-                <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
-                <span id="status-text" class="text-[10px] font-mono uppercase text-gray-300">System Online</span>
-            </div>
-        </header>
-
-        <main class="flex-1 flex flex-col items-center justify-center relative">
-            
-            <div id="core-wrapper" class="core-container status-idle">
-                <div class="neural-ring ring-1"></div>
-                <div class="neural-ring ring-2"></div>
-                <div class="neural-ring ring-3"></div>
-                <div class="core-glow"></div>
-            </div>
-
-            <div id="captions-container" class="absolute bottom-12 w-full max-w-2xl text-center px-4">
-                <p id="captions" class="font-display text-xl md:text-3xl font-light text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 transition-all min-h-[3rem]">
-                    Initializing Neural Link...
-                </p>
-            </div>
-        </main>
-
-        <footer class="flex justify-between items-end opacity-50">
-            <div class="audio-viz" id="visualizer">
-                </div>
-            <div class="text-[10px] font-mono text-gray-600">
-                LATENCY: <span class="text-gray-400">12ms</span> | CORE: <span class="text-indigo-400">ACTIVE</span>
-            </div>
-        </footer>
-    </div>
-
-    <div class="toast" id="interaction-toast">Click anywhere to enable audio output</div>
-
+  </head>
+  <body class="flex flex-col justify-between p-6">
+    <div class="scan-line"></div>
+    <header class="flex justify-between items-center z-10">
+      <div>
+        <h1 class="text-4xl font-bold tracking-widest uppercase">
+          NOUSAD<span class="text-white">AI</span>
+        </h1>
+        <div class="text-xs text-blue-400 tracking-[0.5em] mt-1">
+          SYSTEM ONLINE
+        </div>
+      </div>
+      <div class="hud-border px-4 py-2 rounded flex items-center gap-3">
+        <div
+          id="status-light"
+          class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_red]"
+        ></div>
+        <span id="status-text" class="font-mono text-xs uppercase"
+          >INITIALIZING</span
+        >
+      </div>
+    </header>
+    <main
+      class="flex-1 flex flex-col items-center justify-center relative z-10"
+    >
+      <div id="core-wrapper" class="core-container mb-12">
+        <div class="ring r1"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+        <div class="core"></div>
+      </div>
+      <div class="w-full max-w-3xl text-center">
+        <p
+          id="captions"
+          class="text-2xl md:text-3xl font-light min-h-[60px] uppercase tracking-wide opacity-90"
+        >
+          CLICK ANYWHERE TO ENGAGE SYSTEM
+        </p>
+      </div>
+    </main>
+    <footer class="flex justify-between items-end z-10 w-full">
+      <div id="visualizer" class="flex items-end h-16"></div>
+      <div
+        class="hud-border px-4 py-2 text-[10px] uppercase text-gray-400 tracking-wider"
+      >
+        Developed by Mohamed Nousad
+      </div>
+    </footer>
     <script type="module">
-        import { GoogleGenerativeAI } from "@google/generative-ai";
-
-        // --- CONFIGURATION ---
-        // 1. Google Gemini API Key (Brain)
-        const GEMINI_API_KEY = "AIzaSyCA55VTeGj99g3Gc59c0v-Fd3KASTrVqq0"; 
-        
-        // 2. ElevenLabs API (Voice Cloning)
-        // You must get these from https://elevenlabs.io/
-        // Use the "Instant Voice Cloning" feature there to upload your audio file, then paste the ID here.
-        const XI_API_KEY = "sk_..."; // PASTE YOUR ELEVENLABS API KEY HERE
-        const VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // PASTE YOUR CLONED VOICE ID HERE (Default: Rachel)
-
-        const SYSTEM_PROMPT = "You are Nousad AI. You are a highly advanced neural interface. Your responses are intelligent, very concise, and conversational. Do not use asterisks or formatting. Speak naturally.";
-
-        // --- STATE ---
-        const state = {
-            genAI: new GoogleGenerativeAI(GEMINI_API_KEY),
-            model: null,
-            chat: null,
-            rec: null,
-            isListening: false,
-            audioCtx: null,
-            audioUnlock: false
+      import { GoogleGenerativeAI } from "@google/generative-ai";
+      const API_KEY = "AIzaSyCA55VTeGj99g3Gc59c0v-Fd3KASTrVqq0";
+      const sysPrompt =
+        "You are Nousad AI, a futuristic intelligent assistant. Keep responses concise, witty, and precise. No formatting.";
+      let state = {
+        genAI: new GoogleGenerativeAI(API_KEY),
+        model: null,
+        chat: null,
+        rec: null,
+        speaking: false,
+        voices: [],
+      };
+      const ui = {
+        core: document.querySelector(".core"),
+        captions: document.getElementById("captions"),
+        status: document.getElementById("status-text"),
+        light: document.getElementById("status-light"),
+        viz: document.getElementById("visualizer"),
+      };
+      async function init() {
+        state.model = state.genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+        state.chat = state.model.startChat({
+          history: [
+            { role: "user", parts: [{ text: sysPrompt }] },
+            { role: "model", parts: [{ text: "Online." }] },
+          ],
+        });
+        setupVoice();
+        setupRec();
+        createViz();
+      }
+      function setupVoice() {
+        window.speechSynthesis.onvoiceschanged = () => {
+          state.voices = window.speechSynthesis.getVoices();
         };
-
-        const els = {
-            core: document.getElementById('core-wrapper'),
-            captions: document.getElementById('captions'),
-            status: document.getElementById('status-text'),
-            dot: document.getElementById('status-dot'),
-            viz: document.getElementById('visualizer'),
-            toast: document.getElementById('interaction-toast')
+      }
+      function getBestVoice() {
+        return (
+          state.voices.find((v) => v.name.includes("Google US English")) ||
+          state.voices.find((v) => v.name.includes("Zira")) ||
+          state.voices.find((v) => v.lang === "en-US") ||
+          state.voices[0]
+        );
+      }
+      function setupRec() {
+        if (!("webkitSpeechRecognition" in window))
+          return (ui.captions.innerText = "VOICE MODULE MISSING");
+        const Rec = window.webkitSpeechRecognition;
+        state.rec = new Rec();
+        state.rec.continuous = false;
+        state.rec.interimResults = false;
+        state.rec.lang = "en-US";
+        state.rec.onstart = () => {
+          if (state.speaking) return;
+          setStatus("LISTENING", "#00f3ff");
+          ui.core.parentElement.classList.add("status-listening");
         };
-
-        // --- INITIALIZATION ---
-        async function init() {
-            // Setup Visualizer Bars
-            for(let i=0; i<20; i++) {
-                const b = document.createElement('div');
-                b.className = 'bar';
-                els.viz.appendChild(b);
-            }
-
-            // Init Gemini
-            state.model = state.genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
-            state.chat = state.model.startChat({
-                history: [
-                    { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-                    { role: "model", parts: [{ text: "Systems operational." }] }
-                ]
-            });
-
-            // Start Listening Immediately
-            setupRecognition();
-            
-            // Interaction Check (Browser Policy)
+        state.rec.onend = () => {
+          ui.core.parentElement.classList.remove("status-listening");
+          if (!state.speaking) state.rec.start();
+        };
+        state.rec.onresult = async (e) => {
+          const transcript = e.results[0][0].transcript;
+          ui.captions.innerText = transcript;
+          setStatus("PROCESSING", "#a855f7");
+          state.rec.stop();
+          try {
+            const result = await state.chat.sendMessage(transcript);
+            speak(result.response.text());
+          } catch (err) {
+            setStatus("ERROR", "#ef4444");
             setTimeout(() => {
-                if(!state.audioUnlock) els.toast.style.opacity = '1';
-            }, 3000);
-        }
-
-        // --- SPEECH RECOGNITION (Input) ---
-        function setupRecognition() {
-            if (!('webkitSpeechRecognition' in window)) return els.captions.innerText = "Browser not supported.";
-            
-            state.rec = new webkitSpeechRecognition();
-            state.rec.continuous = true;
-            state.rec.interimResults = true;
-            state.rec.lang = 'en-US';
-
-            state.rec.onstart = () => {
-                state.isListening = true;
-                setStatus("Listening", "status-listening", "#3b82f6");
-                els.captions.innerText = "";
-            };
-
-            state.rec.onresult = (e) => {
-                let final = '';
-                for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if (e.results[i].isFinal) final += e.results[i][0].transcript;
-                    else els.captions.innerText = e.results[i][0].transcript.toLowerCase();
-                }
-                if (final) processInput(final);
-            };
-
-            state.rec.onend = () => {
-                // Auto-restart unless processing
-                if (!els.core.classList.contains('status-speaking') && !els.core.classList.contains('status-processing')) {
-                    state.rec.start();
-                }
-            };
-
-            state.rec.start();
-        }
-
-        // --- AI LOGIC ---
-        async function processInput(text) {
-            state.rec.stop();
-            setStatus("Processing", "status-processing", "#a855f7");
-            els.captions.innerText = text;
-
-            try {
-                const result = await state.chat.sendMessage(text);
-                const response = result.response.text();
-                streamVoice(response); // Use ElevenLabs
-            } catch (e) {
-                console.error(e);
-                setStatus("Error", "status-idle", "#ef4444");
-                setTimeout(() => state.rec.start(), 2000);
-            }
-        }
-
-        // --- ELEVENLABS TTS (Cloned Voice Output) ---
-        async function streamVoice(text) {
-            setStatus("Generating Voice", "status-processing", "#ec4899");
-            
-            // Fallback if API Key not set
-            if(XI_API_KEY.includes("sk_...")) {
-                console.warn("ElevenLabs API Key missing. Using default browser voice.");
-                fallbackSpeak(text);
-                return;
-            }
-
-            try {
-                const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'audio/mpeg',
-                        'xi-api-key': XI_API_KEY,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        text: text,
-                        model_id: "eleven_monolingual_v1",
-                        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-                    })
-                });
-
-                if(!response.ok) throw new Error("Voice API Error");
-
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio(url);
-
-                audio.onplay = () => {
-                    setStatus("Speaking", "status-speaking", "#ec4899");
-                    animateViz(true);
-                };
-
-                audio.onended = () => {
-                    setStatus("Listening", "status-listening", "#3b82f6");
-                    animateViz(false);
-                    els.captions.innerText = "";
-                    state.rec.start();
-                    URL.revokeObjectURL(url);
-                };
-
-                await audio.play();
-
-            } catch (e) {
-                console.error("Voice Clone Failed:", e);
-                fallbackSpeak(text); // Fallback to browser TTS
-            }
-        }
-
-        // --- FALLBACK (Browser TTS) ---
-        function fallbackSpeak(text) {
-            const u = new SpeechSynthesisUtterance(text.replace(/[*#]/g, ''));
-            u.rate = 1.0;
-            u.pitch = 1.0;
-            
-            u.onstart = () => {
-                setStatus("Speaking (Local)", "status-speaking", "#ec4899");
-                animateViz(true);
-            };
-            
-            u.onend = () => {
-                setStatus("Listening", "status-listening", "#3b82f6");
-                animateViz(false);
-                els.captions.innerText = "";
-                state.rec.start();
-            };
-
-            window.speechSynthesis.speak(u);
-        }
-
-        // --- UTILS & VISUALS ---
-        function setStatus(text, mode, color) {
-            els.status.innerText = text;
-            els.status.style.color = color;
-            els.dot.style.backgroundColor = color;
-            els.dot.style.boxShadow = `0 0 10px ${color}`;
-            els.core.className = `core-container ${mode}`;
-        }
-
-        function animateViz(active) {
-            const bars = document.querySelectorAll('.bar');
-            if(!active) {
-                bars.forEach(b => b.style.height = '4px');
-                return;
-            }
-            const loop = () => {
-                if(!els.core.classList.contains('status-speaking')) return;
-                bars.forEach(b => {
-                    b.style.height = Math.random() * 25 + 4 + 'px';
-                    b.style.opacity = Math.random() * 0.5 + 0.5;
-                });
-                requestAnimationFrame(loop);
-            };
-            loop();
-        }
-
-        // --- GLOBAL HANDLER ---
-        window.unlockAudio = () => {
-            state.audioUnlock = true;
-            els.toast.style.opacity = '0';
-            // Init dummy audio context to unlock browser policy
-            const Ctx = window.AudioContext || window.webkitAudioContext;
-            if(Ctx) {
-                const ctx = new Ctx();
-                ctx.resume();
-            }
+              state.rec.start();
+            }, 2000);
+          }
         };
-
-        // Start
-        window.onload = init;
-
+      }
+      function speak(text) {
+        state.speaking = true;
+        state.rec.stop();
+        setStatus("SPEAKING", "#fff");
+        ui.core.parentElement.classList.add("status-speaking");
+        const u = new SpeechSynthesisUtterance(text);
+        u.voice = getBestVoice();
+        u.pitch = 1.1;
+        u.rate = 1.1;
+        u.onend = () => {
+          state.speaking = false;
+          ui.core.parentElement.classList.remove("status-speaking");
+          setStatus("STANDBY", "#00f3ff");
+          state.rec.start();
+        };
+        window.speechSynthesis.speak(u);
+        animateViz();
+      }
+      function setStatus(txt, col) {
+        ui.status.innerText = txt;
+        ui.light.style.backgroundColor = col;
+        ui.light.style.boxShadow = `0 0 15px ${col}`;
+      }
+      function createViz() {
+        for (let i = 0; i < 30; i++) {
+          const b = document.createElement("div");
+          b.className = "viz-bar";
+          ui.viz.appendChild(b);
+        }
+      }
+      function animateViz() {
+        if (!state.speaking) return resetViz();
+        const bars = document.querySelectorAll(".viz-bar");
+        bars.forEach((b) => {
+          b.style.height = Math.random() * 60 + 5 + "px";
+        });
+        requestAnimationFrame(animateViz);
+      }
+      function resetViz() {
+        document
+          .querySelectorAll(".viz-bar")
+          .forEach((b) => (b.style.height = "5px"));
+      }
+      document.body.onclick = () => {
+        document.body.onclick = null;
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        ctx.resume();
+        state.rec.start();
+        ui.captions.innerText = "SYSTEM ENGAGED. AWAITING INPUT.";
+        setStatus("STANDBY", "#00f3ff");
+      };
+      window.onload = init;
     </script>
-</body>
+  </body>
 </html>
